@@ -1,163 +1,72 @@
-(() => {
-  const SURFACE_URI = "web://anmolraj-accenture.github.io/poc-decisioning2#ajo-offer";
-  const CONTENT_SCHEMA = "https://ns.adobe.com/personalization/json-content-item";
+// --- Dummy "offers" you can replace with AJO Decisioning response payload ---
+// Each item includes attributes you'll typically map from AJO: id, placement, priority, image, CTA, etc.
+const OFFERS = [
+  { id:"TD-001", placement:"top-deals", title:"Galaxy Ultra for $0/mo (demo)",
+    desc:"Eligible trade-in required. Terms apply (demo copy).",
+    badges:["Trade-in","36 mo"], ctaText:"Shop now", ctaUrl:"#", priority:90 },
 
-  function getPreferredInterest() {
-    const v = localStorage.getItem("PreferredInterest");
-    return (v && v.trim()) ? v.trim() : null;
-  }
+  { id:"TD-002", placement:"top-deals", title:"Fiber: save monthly (demo)",
+    desc:"Bundle savings + reward card messaging (demo copy).",
+    badges:["Bundle","New customers"], ctaText:"Explore", ctaUrl:"#", priority:80 },
 
-  function setError(msg) {
-    const box = document.getElementById("error-message");
-    if (box) box.textContent = msg || "";
-  }
+  { id:"TD-003", placement:"top-deals", title:"$200 off per line (demo)",
+    desc:"Online order + new line. Limited time (demo copy).",
+    badges:["New line","Credits"], ctaText:"Get offer", ctaUrl:"#", priority:70 },
 
-  function setMessage(msg) {
-    const box = document.getElementById("message");
-    if (box) box.textContent = msg || "";
-  }
+  { id:"WD-101", placement:"wireless-deals", title:"Phone deal A (demo)",
+    desc:"Great value with eligible plan (demo copy).",
+    badges:["Wireless","Featured"], ctaText:"View", ctaUrl:"#", priority:85 },
 
-  function decodeHtmlEntities(html) {
-    const txt = document.createElement("textarea");
-    txt.innerHTML = html;
-    return txt.value;
-  }
+  { id:"WD-102", placement:"wireless-deals", title:"Phone deal B (demo)",
+    desc:"No trade-in required (demo copy).",
+    badges:["No trade-in"], ctaText:"Shop", ctaUrl:"#", priority:75 },
 
-  function normalizeContentToHtml(content) {
-    if (typeof content === "string") {
-      return decodeHtmlEntities(content);
-    }
+  { id:"WD-103", placement:"wireless-deals", title:"Phone deal C (demo)",
+    desc:"Bill credits over time (demo copy).",
+    badges:["Bill credits"], ctaText:"Details", ctaUrl:"#", priority:65 },
+];
 
-    if (Array.isArray(content)) {
-      return `
-        <div class="offer-card">
-          <h3>Personalized Offer</h3>
-          <pre style="white-space: pre-wrap;">${escapeHtml(JSON.stringify(content, null, 2))}</pre>
+// --- Rendering ---
+function renderPlacement(placementName, offers){
+  const host = document.querySelector(`[data-placement="${placementName}"]`);
+  if(!host) return;
+
+  host.innerHTML = offers
+    .sort((a,b) => (b.priority||0) - (a.priority||0))
+    .map(o => `
+      <article class="card" data-offer-id="${o.id}">
+        <div class="card__media">Placement: ${placementName}</div>
+        <div class="card__body">
+          <h3 class="card__title">${escapeHtml(o.title)}</h3>
+          <p class="card__desc">${escapeHtml(o.desc || "")}</p>
+          <div class="card__meta">
+            <span class="badge">ID: ${escapeHtml(o.id)}</span>
+            ${(o.badges||[]).slice(0,3).map(b => `<span class="badge">${escapeHtml(b)}</span>`).join("")}
+          </div>
+          <div class="card__actions">
+            <a class="btn" href="${o.ctaUrl || "#"}">${escapeHtml(o.ctaText || "Shop")}</a>
+            <button class="btn btn--ghost" type="button" onclick="window.__demoClick('${o.id}')">
+              Track click
+            </button>
+          </div>
         </div>
-      `;
-    }
+      </article>
+    `).join("");
+}
 
-    if (content && typeof content === "object") {
-      return `
-        <div class="offer-card">
-          <h3>Personalized Offer</h3>
-          <pre style="white-space: pre-wrap;">${escapeHtml(JSON.stringify(content, null, 2))}</pre>
-        </div>
-      `;
-    }
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
 
-    return null;
-  }
+// --- Demo tracking hook (swap with Alloy/WebSDK / AJO tracking as needed) ---
+window.__demoClick = function(offerId){
+  console.log("[DEMO] Offer clicked:", offerId);
+  // Example for your AJO-D demo: send offerId + placement + timestamp
+  // window.alloy && alloy("sendEvent", { xdm: {...} });
+};
 
-  function escapeHtml(str) {
-    return String(str)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
-  function pickPropositionForSurface(result) {
-    const propositions = result?.propositions || [];
-    return propositions.find(p => p.scope === SURFACE_URI) || propositions[0] || null;
-  }
-
-  function renderOffer(result) {
-    console.log("🔍 Web SDK decision response:", result);
-
-    const container = document.getElementById("ajo-offer");
-    if (!container) {
-      console.error("❌ Container with id 'ajo-offer' not found.");
-      return;
-    }
-
-    const proposition = pickPropositionForSurface(result);
-    const item = proposition?.items?.find(i => i.schema === CONTENT_SCHEMA) || proposition?.items?.[0];
-    const content = item?.data?.content;
-
-    const html = normalizeContentToHtml(content);
-
-    if (html) {
-      container.innerHTML = html;
-      setError("");
-      setMessage("✅ Personalized offer loaded.");
-    } else {
-      console.warn("⚠️ No personalized offer content returned (empty or unsupported format).");
-      container.innerHTML = `<p>No personalized offers available at this time.</p>`;
-      setMessage("");
-    }
-  }
-  function sendDisplayEvent(proposition) {
-    if (!proposition?.id || !proposition?.scope) return;
-
-    alloy("sendEvent", {
-      xdm: {
-        eventType: "decisioning.propositionDisplay",
-        _experience: {
-          decisioning: {
-            propositions: [{
-              id: proposition.id,
-              scope: proposition.scope,
-              scopeDetails: proposition.scopeDetails || {}
-            }]
-          }
-        }
-      }
-    }).catch(e => console.warn("Display event failed:", e));
-  }
-
-  function runPersonalization() {
-    const preferredInterest = getPreferredInterest();
-
-    console.log("🚀 Fetching personalization for surface:", SURFACE_URI, "interest:", preferredInterest);
-
-    if (!preferredInterest) {
-      setMessage("ℹ️ No stored preference found. Showing default/no-offer behavior.");
-    }
-
-    const uniqueEventId = `investment_preference_event_${Date.now()}`;
-
-    return alloy("sendEvent", {
-      renderDecisions: true, 
-      personalization: {
-        surfaces: [SURFACE_URI],
-        schemas: [CONTENT_SCHEMA],
-        defaultPersonalizationEnabled: false
-      },
-      xdm: {
-        eventType: "decisioning.propositionFetch",
-        eventID: uniqueEventId,
-        timestamp: new Date().toISOString(),
-        _accenture_partner: {
-          Interest: {
-            PreferredInterest: preferredInterest || "unknown"
-          }
-        }
-      }
-    })
-      .then(renderOffer)
-      .catch((error) => {
-        console.error("❌ sendEvent failed:", error);
-        setError("Failed to load personalization (sendEvent failed). Check console/network.");
-        const container = document.getElementById("ajo-offer");
-        if (container) container.innerHTML = `<p>Could not load personalized offer.</p>`;
-      });
-  }
-
-  function waitForAlloy(callback, retries = 60) {
-    if (typeof alloy === "function") {
-      console.log("✅ Alloy loaded.");
-      callback();
-    } else if (retries > 0) {
-      setTimeout(() => waitForAlloy(callback, retries - 1), 250);
-    } else {
-      console.error("❌ alloy not loaded after waiting.");
-      setError("Adobe Alloy did not load. Check Launch script, environment, and console errors.");
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    waitForAlloy(runPersonalization);
-  });
-})();
+// --- Boot ---
+document.addEventListener("DOMContentLoaded", () => {
+  renderPlacement("top-deals", OFFERS.filter(o => o.placement === "top-deals"));
+  renderPlacement("wireless-deals", OFFERS.filter(o => o.placement === "wireless-deals"));
+});
