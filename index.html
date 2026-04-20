@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Financial Opportunities</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ✅ Correct CSS include -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="navbar">
+    <h1>SmartInvest Portal</h1>
+    <ul>
+      <li><a href="#">Home</a></li>
+      <li><a href="#">Investments</a></li>
+      <li><a href="#">About</a></li>
+      <li><a href="#">Contact</a></li>
+    </ul>
+  </div>
+
+  <div class="container">
+    <div class="left-column">
+      <h1>Explore Your Financial Options</h1>
+      <p>Personalized investments, made smarter.</p>
+    </div>
+
+    <!-- ✅ THIS WILL NOW EXIST IN DOM -->
+    <div
+      class="right-column"
+      id="ajo-offer"
+      data-personalization-region-id="web://anmolraj-accenture.github.io/poc-decisioning2#ajo-offer"
+    >
+      <p>Loading your personalized offer...</p>
+    </div>
+  </div>
+
+  <div id="error-message" style="color:red;padding:1rem;"></div>
+  <div id="message" style="padding:1rem;font-weight:bold;"></div>
+
+  <!-- ✅ Correct Launch include -->
+  <script
+    src="https://assets.adobedtm.com/e72b4113c11a/523d00e5384d/launch-37956bbe7fae.min.js"
+    async
+  ></script>
+
+  <!-- ✅ Correct app JS -->
+  <script src="scripts.js" defer></script>
+</body>
+</html>
