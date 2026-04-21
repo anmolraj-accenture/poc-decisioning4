@@ -3,6 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script>
+  window.adobeDataLayer = window.adobeDataLayer || [];
+  window.adobeDataLayer.push({
+    page: {
+      name: "deals",
+      url: location.href,
+      section: "marketing",
+      language: document.documentElement.lang || "en"
+    },
+    user: {
+      state: "UnAuthenticated"
+    },
+    decisioning: {
+      placements: ["top-deals", "wireless-deals"],
+      surfaceUri: "web://anmolraj-accenture.github.io/poc-decisioning4/deals"
+    }
+  });
+</script>
   <title>Deals Demo (AJO-D)</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
