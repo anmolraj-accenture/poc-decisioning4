@@ -4,7 +4,6 @@ const OFFERS = [
   { id:"TD-001", placement:"top-deals", title:"Galaxy Ultra for $0/mo (demo)",
     desc:"Eligible trade-in required. Terms apply (demo copy).",
     badges:["Trade-in","36 mo"], ctaText:"Shop now", ctaUrl:"#", priority:90 },
-
   { id:"TD-002", placement:"top-deals", title:"Fiber: save monthly (demo)",
     desc:"Bundle savings + reward card messaging (demo copy).",
     badges:["Bundle","New customers"], ctaText:"Explore", ctaUrl:"#", priority:80 },
