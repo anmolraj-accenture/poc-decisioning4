@@ -2,7 +2,7 @@
   // ------------------------------------------------------------
   // AJO Decisioning / Web SDK config
   // ------------------------------------------------------------
-  const SURFACE_URI = "web://anmolraj-accenture.github.io/poc-decisioning4/#top-deals";
+  const SURFACE_URI = "web://anmolraj-accenture.github.io/poc-decisioning4#top-deals";
   const CONTENT_SCHEMA = "https://ns.adobe.com/personalization/json-content-item";
 
   // ------------------------------------------------------------
