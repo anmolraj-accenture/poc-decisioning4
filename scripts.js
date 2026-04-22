@@ -2,22 +2,22 @@
   // ------------------------------------------------------------
   // AJO Decisioning / Web SDK config
   // ------------------------------------------------------------
-  const SURFACE_URI = "web://anmolraj-accenture.github.io/poc-decisioning4#top-deals";
+  const SURFACE_URI = "web://anmolraj-accenture.github.io/poc-decisioning2#ajo-offer";
   const CONTENT_SCHEMA = "https://ns.adobe.com/personalization/json-content-item";
 
   // ------------------------------------------------------------
   // Demo offers (fallback/default)
   // ------------------------------------------------------------
   const OFFERS = [
-    { id:"TD-001", placement:"top-deals", title:"Galaxy Ultra for $0/mo (demo)",
+    { id:"TD-001", placement:"ajo-offer", title:"Galaxy Ultra for $0/mo (demo)",
       desc:"Eligible trade-in required. Terms apply (demo copy).",
       badges:["Trade-in","36 mo"], ctaText:"Shop now", ctaUrl:"#", priority:90 },
 
-    { id:"TD-002", placement:"top-deals", title:"Fiber: save monthly (demo)",
+    { id:"TD-002", placement:"ajo-offer", title:"Fiber: save monthly (demo)",
       desc:"Bundle savings + reward card messaging (demo copy).",
       badges:["Bundle","New customers"], ctaText:"Explore", ctaUrl:"#", priority:80 },
 
-    { id:"TD-003", placement:"top-deals", title:"$200 off per line (demo)",
+    { id:"TD-003", placement:"ajo-offer", title:"$200 off per line (demo)",
       desc:"Online order + new line. Limited time (demo copy).",
       badges:["New line","Credits"], ctaText:"Get offer", ctaUrl:"#", priority:70 },
 
@@ -177,7 +177,7 @@
   }
 
   function renderAllPlacements() {
-    renderPlacement("top-deals", (RUNTIME_OFFERS || []).filter(o => o.placement === "top-deals"));
+    renderPlacement("ajo-offer", (RUNTIME_OFFERS || []).filter(o => o.placement === "ajo-offer"));
     renderPlacement("wireless-deals", (RUNTIME_OFFERS || []).filter(o => o.placement === "wireless-deals"));
   }
 
@@ -251,7 +251,7 @@
     if (typeof content === "object") {
       if (Array.isArray(content.offers)) return { offers: content.offers };
 
-      // placements: { "top-deals": [...], "wireless-deals": [...] }
+      // placements: { "ajo-offer": [...], "wireless-deals": [...] }
       if (content.placements && typeof content.placements === "object") {
         const flattened = [];
         Object.keys(content.placements).forEach((pl) => {
@@ -282,7 +282,7 @@
 
     return {
       id: String(id),
-      placement: raw.placement || raw.slot || fallbackPlacement || "top-deals",
+      placement: raw.placement || raw.slot || fallbackPlacement || "ajo-offer",
       title: raw.title || raw.headline || raw.name || "Personalized offer",
       desc: raw.desc || raw.description || raw.body || raw.copy || "",
       badges: raw.badges || raw.tags || raw.labels || [],
