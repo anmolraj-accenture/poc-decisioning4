@@ -168,3 +168,4 @@
   function getOfferById(offerId) {
     return (RUNTIME_OFFERS || []).find(o => o.id === offerId);
   }
+})
