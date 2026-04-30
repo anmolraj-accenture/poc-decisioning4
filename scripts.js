@@ -64,25 +64,26 @@
       ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[s])
     );
 
-  function renderPlacement(name, offers) {
-    const host = document.querySelector(`[data-placement="${name}"]`);
-    if (!host) return;
+function renderPlacement(name, offers) {
+  const host = document.querySelector(`[data-placement="${name}"]`);
+  if (!host) return;
 
-    host.innerHTML = offers
-      .sort((a,b) => (b.priority||0)-(a.priority||0))
-      .map(o => `
-        <article class="card">
-          <h3>${escapeHtml(o.title)}</h3>
-          <p>${escapeHtml(o.desc)}</p>
-          <a href="${escapeHtml(o.ctaUrl)}"
-             data-offer-id="${escapeHtml(o.id)}"
-             data-placement="${escapeHtml(name)}"
-             class="btn">
-            ${escapeHtml(o.ctaText || "Shop")}
-          </a>
-        </article>
-      `).join("");
-  }
+  host.innerHTML = offers
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+    .map(o => `
+      <article class="card">
+        <h3>${escapeHtml(o.title)}</h3>
+        <p>${escapeHtml(o.desc)}</p>
+        <a
+          href="${escapeHtml(o.ctaUrl || "#")}"
+          data-placement="${escapeHtml(name)}"
+          class="btn">
+          ${escapeHtml(o.ctaText || "Shop")}
+        </a>
+      </article>
+    `)
+    .join("");
+}
 
   function renderAllPlacements() {
     renderPlacement("ajo-offer", RUNTIME_OFFERS.filter(o => o.placement === "ajo-offer"));
