@@ -10,23 +10,6 @@
     "https://ns.adobe.com/personalization/json-content-item";
 
   // ------------------------------------------------------------
-  // Demo offers (fallback)
-  // ------------------------------------------------------------
-  const OFFERS = [
-    {
-      id: "D-AJO-001",
-      placement: "ajo-offer",
-      title: "Galaxy Ultra for $0/mo (demo)",
-      desc: "Eligible trade-in required.",
-      ctaText: "Shop now",
-      ctaUrl: "#",
-      priority: 90
-    }
-  ];
-
-  let RUNTIME_OFFERS = [...OFFERS];
-
-  // ------------------------------------------------------------
   // Helpers
   // ------------------------------------------------------------
   function getDecisionInputs() {
@@ -37,13 +20,33 @@
     }
   }
 
-  function render(text) {
+  function decodeHtmlEntities(html) {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+  }
+
+  function pickPropositionForSurface(result) {
+    const propositions = result?.propositions || [];
+    return (
+      propositions.find((p) => p.scope === SURFACE_URI) ||
+      propositions[0] ||
+      null
+    );
+  }
+
+  function render(html) {
     const el = document.querySelector('[data-placement="ajo-offer"]');
     if (!el) {
       console.error("❌ data-placement='ajo-offer' not found");
       return;
     }
-    el.innerHTML = `<div style="border:1px solid #ccc;padding:12px">${text}</div>`;
+
+    el.innerHTML = `
+      <div style="border:1px solid #ccc;padding:12px;border-radius:10px;background:#fff">
+        ${html}
+      </div>
+    `;
   }
 
   // ------------------------------------------------------------
@@ -59,42 +62,48 @@
       renderDecisions: true,
       personalization: {
         surfaces: [SURFACE_URI],
-        schemas: [CONTENT_SCHEMA]
+        schemas: [CONTENT_SCHEMA],
+        defaultPersonalizationEnabled: false
       },
       xdm: {
-        eventType: "web.webPageDetails.pageViews",
-        web: {
-          webPageDetails: {
-            name: document.title,
-            URL: window.location.href
-          }
-        },
+        eventType: "decisioning.propositionFetch",
+        timestamp: new Date().toISOString(),
         _accenture_partner: inputs
       }
     })
-      .then(result => {
+      .then((result) => {
         console.log("✅ Decision response:", result);
 
-        const item =
-          result?.decisions?.[0]?.items?.[0] ||
-          result?.propositions?.[0]?.items?.[0];
+        const proposition = pickPropositionForSurface(result);
+        console.log("🎯 Selected proposition:", proposition);
 
-        console.log("🎯 Picked decision item:", item);
+        const item =
+          proposition?.items?.find(
+            (i) => i.schema === CONTENT_SCHEMA
+          ) || proposition?.items?.[0];
 
         const content = item?.data?.content;
 
         if (!content) {
-          render("No content returned from AJO");
+          render("<p>No personalized offer available.</p>");
           return;
         }
 
-        render(
-          typeof content === "string"
-            ? content
-            : `<pre>${JSON.stringify(content, null, 2)}</pre>`
-        );
+        let html;
+
+        if (typeof content === "string") {
+          // ✅ FIX: Decode HTML before rendering
+          html = decodeHtmlEntities(content);
+        } else {
+          html = `<pre>${JSON.stringify(content, null, 2)}</pre>`;
+        }
+
+        render(html);
       })
-      .catch(err => console.error("❌ sendEvent failed:", err));
+      .catch((err) => {
+        console.error("❌ sendEvent failed:", err);
+        render("<p>Failed to load personalized offer.</p>");
+      });
   }
 
   function waitForAlloy(cb, retries = 40) {
