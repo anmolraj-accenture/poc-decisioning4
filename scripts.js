@@ -1,11 +1,19 @@
 (() => {
-  console.log("✅ Page 2 JS loaded");
+  console.log("✅ Multi-surface personalization JS loaded");
 
   // ------------------------------------------------------------
-  // AJO Decisioning / Web SDK config
+  // ✅ CONFIG: Add all surfaces here (only place you'll edit later)
   // ------------------------------------------------------------
-  const SURFACE_URI =
-    "web://anmolraj-accenture.github.io/poc-decisioning2#ajo-offer";
+  const SURFACE_CONFIG = {
+    "web://anmolraj-accenture.github.io/poc-decisioning2#ajo-offer":
+      '[data-placement="ajo-offer"]',
+
+    "web://anmolraj-accenture.github.io/poc-decisioning2#wireless-deals":
+      '[data-placement="wireless-deals"]'
+  };
+
+  const SURFACE_URIS = Object.keys(SURFACE_CONFIG);
+
   const CONTENT_SCHEMA =
     "https://ns.adobe.com/personalization/json-content-item";
 
@@ -26,19 +34,16 @@
     return txt.value;
   }
 
-  function pickPropositionForSurface(result) {
+  function getPropositionsForSurfaces(result) {
     const propositions = result?.propositions || [];
-    return (
-      propositions.find((p) => p.scope === SURFACE_URI) ||
-      propositions[0] ||
-      null
-    );
+    return propositions.filter((p) => SURFACE_URIS.includes(p.scope));
   }
 
-  function render(html) {
-    const el = document.querySelector('[data-placement="ajo-offer"]');
+  function renderToSelector(selector, html) {
+    const el = document.querySelector(selector);
+
     if (!el) {
-      console.error("❌ data-placement='ajo-offer' not found");
+      console.warn(`⚠️ No element found for selector: ${selector}`);
       return;
     }
 
@@ -49,11 +54,31 @@
     `;
   }
 
+  function extractContent(proposition) {
+    const item =
+      proposition?.items?.find((i) => i.schema === CONTENT_SCHEMA) ||
+      proposition?.items?.[0];
+
+    return item?.data?.content;
+  }
+
+  function formatContent(content) {
+    if (!content) {
+      return "<p>No personalized offer available.</p>";
+    }
+
+    if (typeof content === "string") {
+      return decodeHtmlEntities(content);
+    }
+
+    return `<pre>${JSON.stringify(content, null, 2)}</pre>`;
+  }
+
   // ------------------------------------------------------------
-  // Personalization
+  // Personalization Execution
   // ------------------------------------------------------------
   function runPersonalization() {
-    console.log("🚀 runPersonalization called");
+    console.log("🚀 runPersonalization triggered");
 
     const inputs = getDecisionInputs();
     console.log("🧾 Decision inputs:", inputs);
@@ -61,7 +86,7 @@
     alloy("sendEvent", {
       renderDecisions: true,
       personalization: {
-        surfaces: [SURFACE_URI],
+        surfaces: SURFACE_URIS, // ✅ dynamically supports many surfaces
         schemas: [CONTENT_SCHEMA],
         defaultPersonalizationEnabled: false
       },
@@ -74,41 +99,52 @@
       .then((result) => {
         console.log("✅ Decision response:", result);
 
-        const proposition = pickPropositionForSurface(result);
-        console.log("🎯 Selected proposition:", proposition);
+        const propositions = getPropositionsForSurfaces(result);
 
-        const item =
-          proposition?.items?.find(
-            (i) => i.schema === CONTENT_SCHEMA
-          ) || proposition?.items?.[0];
+        if (!propositions.length) {
+          console.warn("⚠️ No propositions returned for surfaces");
 
-        const content = item?.data?.content;
+          // Populate all containers with fallback
+          SURFACE_URIS.forEach((surface) => {
+            renderToSelector(
+              SURFACE_CONFIG[surface],
+              "<p>No personalized offer available.</p>"
+            );
+          });
 
-        if (!content) {
-          render("<p>No personalized offer available.</p>");
           return;
         }
 
-        let html;
+        // ✅ Render each surface dynamically
+        propositions.forEach((proposition) => {
+          const surface = proposition.scope;
+          const selector = SURFACE_CONFIG[surface];
 
-        if (typeof content === "string") {
-          // ✅ FIX: Decode HTML before rendering
-          html = decodeHtmlEntities(content);
-        } else {
-          html = `<pre>${JSON.stringify(content, null, 2)}</pre>`;
-        }
+          const content = extractContent(proposition);
+          const html = formatContent(content);
 
-        render(html);
+          renderToSelector(selector, html);
+        });
       })
       .catch((err) => {
         console.error("❌ sendEvent failed:", err);
-        render("<p>Failed to load personalized offer.</p>");
+
+        // Fallback: show failure on all placements
+        SURFACE_URIS.forEach((surface) => {
+          renderToSelector(
+            SURFACE_CONFIG[surface],
+            "<p>Failed to load personalized offer.</p>"
+          );
+        });
       });
   }
 
+  // ------------------------------------------------------------
+  // Wait for Alloy
+  // ------------------------------------------------------------
   function waitForAlloy(cb, retries = 40) {
     if (typeof alloy === "function") {
-      console.log("✅ Alloy found");
+      console.log("✅ Alloy detected");
       cb();
     } else if (retries > 0) {
       setTimeout(() => waitForAlloy(cb, retries - 1), 250);
@@ -117,8 +153,11 @@
     }
   }
 
+  // ------------------------------------------------------------
+  // Init
+  // ------------------------------------------------------------
   document.addEventListener("DOMContentLoaded", () => {
-    console.log("✅ DOMContentLoaded");
+    console.log("✅ DOM ready");
     waitForAlloy(runPersonalization);
   });
 })();
